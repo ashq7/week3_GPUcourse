@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 
-const int DSIZE_X = 4;
-const int DSIZE_Y = 4;
+const int DSIZE_X = 2;
+const int DSIZE_Y = 3;
 
 __global__ void add_matrix(float* A, float* B, float* C, int N, int M)
 {
@@ -13,7 +13,9 @@ __global__ void add_matrix(float* A, float* B, float* C, int N, int M)
     // Add the two matrices - make sure you are not out of range
     //question: why is there no "for" loop?
     if (idx <  N && idy < M ){
+        //this stops working in 5th element (second row)
         C[idx * N + idy] =  A[idx * N + idy]+B[idx * N + idy];
+        printf("%f + %f = %f \n", A[idx * N + idy], B[idx * N + idy], C[idx * N + idy]);
     }
 }
 

@@ -24,17 +24,17 @@ __global__ void vector_swap(float *A, float *B, float *C, int v_size) {
 
 int main() {
 
-    //allocate memory for host pointers
+    //Create and allocate memory for host pointers
     float *h_A, *h_B, *h_C, *d_A, *d_B, *d_C;
     h_A = new float[DSIZE];
     h_B = new float[DSIZE];
-    h_C = new float[DSIZE];
+    h_C = new float[DSIZE]; //I don't think h_C is necessary- I never used it
 
 
     for (int i = 0; i < DSIZE; i++) {
         h_A[i] = rand()/(float)RAND_MAX;
         h_B[i] = rand()/(float)RAND_MAX;
-        h_C[i] = 0;
+        //h_C[i] = 0;
         //question: why are the random numbers normally the same?
     }
 
