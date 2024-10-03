@@ -1,8 +1,8 @@
 #include <stdio.h>
 
 
-const int DSIZE = 10;
-const int block_size = 256;
+const int DSIZE = 50;
+const int block_size = 10; //what should this be in the range of? (error earlier was that these were not divisible)
 const int grid_size = DSIZE/block_size;
 
 
@@ -14,16 +14,17 @@ __global__ void vector_swap(float *A, float *B, float *C, int v_size) {
 
     // Swap the vector elements - make sure you are not out of range
     if (idx < v_size){
-       C[idx] = A[idx];
-       A[idx] = B[idx];
-       B[idx] = C[idx];
+        //printf("I'm inside vector_swap!");
+        C[idx] = A[idx];
+        A[idx] = B[idx];
+        B[idx] = C[idx];
     }
 }
 
 
 int main() {
 
-
+    //allocate memory for host pointers
     float *h_A, *h_B, *h_C, *d_A, *d_B, *d_C;
     h_A = new float[DSIZE];
     h_B = new float[DSIZE];
@@ -51,7 +52,8 @@ int main() {
     }
     printf("\n");
 
-    // Allocate memory for host and device pointers 
+    // Allocate memory for host and device pointers
+    //question: do I need to allocate memory for the host even though I already have above? 
     cudaMalloc(&d_A, DSIZE*sizeof(float));
     cudaMalloc(&d_B, DSIZE*sizeof(float));
     cudaMalloc(&d_C, DSIZE*sizeof(float));
@@ -60,20 +62,36 @@ int main() {
     cudaMemcpy(d_A, h_A, DSIZE*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, h_B, DSIZE*sizeof(float), cudaMemcpyHostToDevice);
 
+    // Print and check some elements to make sure swapping was successful
+    //why does trying to print device values give me a seg fault?
+    // printf("Device Matrix A pre-swap: ");
+    // for (int i = 0; i < DSIZE; i++) {
+    //     printf("%f ", d_A[i]);
+    // }
+    // printf("\n");
+
+    // printf("Device Matrix B pre-swap: ");
+    // for (int i = 0; i < DSIZE; i++) {
+    //     printf("%f ", d_B[i]);
+    // }
+    // printf("\n");
+
     // Launch the kernel
     vector_swap<<<grid_size, block_size>>>(d_A, d_B, d_C, DSIZE);
-    
+    cudaDeviceSynchronize();
+
     // Copy back to host 
-    cudaMemcpy(h_C, d_C, DSIZE*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_A, d_A, DSIZE*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_B, d_B, DSIZE*sizeof(float), cudaMemcpyDeviceToHost);
 
     // Print and check some elements to make sure swapping was successful
-    printf("Matrix A post-swap: ");
+    printf("Host Matrix A post-swap: ");
     for (int i = 0; i < DSIZE; i++) {
         printf("%f ", h_A[i]);
     }
     printf("\n");
 
-    printf("Matrix B post-swap: ");
+    printf("Host Matrix B post-swap: ");
     for (int i = 0; i < DSIZE; i++) {
         printf("%f ", h_B[i]);
     }
@@ -89,6 +107,6 @@ int main() {
     cudaFree(d_C);
 
     //question: do I need:
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
     return 0;
 }
