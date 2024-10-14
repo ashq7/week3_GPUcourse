@@ -21,7 +21,19 @@ const float B_val = 2.0f;
 // Square matrix multiplication on CPU : C = A * B
 void matrix_mul_cpu(const float *A, const float *B, float *C, int size) {
   //FIXME:
-  // 
+  // i iterates over rows of matrix A
+  for (int i = 0; i<size; i++){
+    // j iterates over columns of matrix B
+    for (int j = 0; j<size; j++){
+        float temp = 0;
+        // k indexes which item in the ith row of A and jth column of B we are multiplying
+        for (int k = 0; k<size; k++){
+            //i is analagous to idx, j to idy, size to n
+            temp += A[i * size + k] * B [k * size + j];
+        }
+    C[i*size + j]= temp;
+    }
+  }
 }
 
 // Square matrix multiplication on GPU : C = A * B
@@ -30,13 +42,14 @@ __global__ void matrix_mul_gpu(const float *A, const float *B, float *C, int siz
     //FIXME:
     // create thread x index
     // create thread y index
-    idx = ;
-    idy = ;
+    int idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int idy = blockIdx.x * blockDim.x + threadIdx.x;;
     // Make sure we are not out of range
-    if ((idx < FIXME) && (idy < FIXME)) {
+    if ((idx < size) && (idy < size)) {
         float temp = 0;
         for (int i = 0; i < size; i++){
             //FIXME : Add dot product of row and column
+            temp += A [idx * size +idy] * B [idx * size +idy];
         }
         C[idy*size+idx] = temp;                    
     }
@@ -56,8 +69,8 @@ int main() {
     // start timing
     t0 = clock();
 
-    // N*N matrices defined in 1 dimention
-    // If you prefer to do this in 2-dimentions cupdate accordingly
+    // N*N matrices defined in 1 dimension
+    // If you prefer to do this in 2-dimensions, update accordingly
     h_A = new float[DSIZE*DSIZE];
     h_B = new float[DSIZE*DSIZE];
     h_C = new float[DSIZE*DSIZE];
@@ -75,16 +88,42 @@ int main() {
     // Allocate device memory and copy input data from host to device
     cudaMalloc(&d_A, DSIZE*DSIZE*sizeof(float));
     //FIXME:Add all other allocations and copies from host to device
-  
+    cudaMalloc(&d_B, DSIZE*DSIZE*sizeof(float));
+    cudaMalloc(&d_C, DSIZE*DSIZE*sizeof(float));
+
+    // Copy from host to device
+    cudaMemcpy(d_A, h_A, DSIZE*DSIZE*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_B, h_B, DSIZE*DSIZE*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_C, h_C, DSIZE*DSIZE*sizeof(float), cudaMemcpyHostToDevice);
 
     // Launch kernel
     // Specify the block and grid dimentions 
-    dim3 block(,);  //FIXME
-    dim3 grid(,); //FIXME
+    const int block_size = 8;
+    dim3 block(1,1);  //FIXME
+    dim3 grid(DSIZE/block_size,DSIZE/block_size); //FIXME
     matrix_mul_gpu<<<grid, block>>>(d_A, d_B, d_C, DSIZE);
 
     // Copy results back to host
     cudaMemcpy(h_C, d_C, DSIZE*DSIZE*sizeof(float), cudaMemcpyDeviceToHost);
+    // Print and check some elements to make the addition was succesfull
+    printf("GPU \n");
+    printf("Matrix A: ");
+    for (int i = 0; i < DSIZE*DSIZE; i++) {
+        printf("%f ", h_A[i]);
+    }
+    printf("\n");
+
+    printf("Matrix B: ");
+    for (int i = 0; i < DSIZE*DSIZE; i++) {
+        printf("%f ", h_B[i]);
+    }
+    printf("\n");
+
+    printf("Matrix A * Matrix B: ");
+    for (int i = 0; i < DSIZE*DSIZE; i++) {
+        printf("%f ", h_C[i]);
+    }
+    printf("\n");
 
     // GPU timing
     t2 = clock();
@@ -93,6 +132,26 @@ int main() {
 
     // FIXME
     // Excecute and time the cpu matrix multiplication function
+    matrix_mul_cpu(h_A,h_B,h_C,DSIZE);
+    // Print and check some elements to make the addition was succesfull
+    printf("CPU \n");
+    printf("Matrix A: ");
+    for (int i = 0; i < DSIZE*DSIZE; i++) {
+        printf("%f ", h_A[i]);
+    }
+    printf("\n");
+
+    printf("Matrix B: ");
+    for (int i = 0; i < DSIZE*DSIZE; i++) {
+        printf("%f ", h_B[i]);
+    }
+    printf("\n");
+
+    printf("Matrix A * Matrix B: ");
+    for (int i = 0; i < DSIZE*DSIZE; i++) {
+        printf("%f ", h_C[i]);
+    }
+    printf("\n");
 
     // CPU timing
     t3 = clock();
@@ -101,7 +160,13 @@ int main() {
 
     // FIXME
     // Free memory 
-    
+    free(h_A);
+    free(h_B);
+    free(h_C);
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+
     return 0;
 
 }

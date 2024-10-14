@@ -15,7 +15,7 @@ __global__ void add_matrix(float* A, float* B, float* C, int N, int M)
     if (idx*idy < N*M ){
         //this stops working in 5th element (second row)
         C[idx * N + idy] =  A[idx * N + idy]+B[idx * N + idy];
-        printf("%f + %f = %f \n", A[idx * N + idy], B[idx * N + idy], C[idx * N + idy]);
+        //printf("%f + %f = %f \n", A[idx * N + idy], B[idx * N + idy], C[idx * N + idy]);
     }
 }
 
