@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 
-const int DSIZE = 256;
+const int DSIZE = 4;
 const float A_val = 3.0f;
 const float B_val = 2.0f;
 
@@ -49,16 +49,16 @@ __global__ void matrix_mul_gpu(const float *A, const float *B, float *C, int siz
         float temp = 0;
         for (int i = 0; i < size; i++){
             //FIXME : Add dot product of row and column
-            temp += A [idx * size +idy] * B [idx * size +idy];
+            temp += A [idx * size +idy] * B [idy * size +idx];
         }
-        C[idy*size+idx] = temp;                    
+        C[idx*size+idy] = temp;                    
     }
 
 }
 
 int main() {
 
-    float *h_A, *h_B, *h_C, *d_A, *d_B, *d_C;
+    float *h_A, *h_B, *h_C_GPU,*h_C_CPU, *d_A, *d_B, *d_C;
 
     // These are used for timing
     clock_t t0, t1, t2, t3;
@@ -73,11 +73,13 @@ int main() {
     // If you prefer to do this in 2-dimensions, update accordingly
     h_A = new float[DSIZE*DSIZE];
     h_B = new float[DSIZE*DSIZE];
-    h_C = new float[DSIZE*DSIZE];
+    h_C_GPU = new float[DSIZE*DSIZE];
+    h_C_CPU = new float[DSIZE*DSIZE];
     for (int i = 0; i < DSIZE*DSIZE; i++){
         h_A[i] = A_val;
         h_B[i] = B_val;
-        h_C[i] = 0;
+        h_C_GPU[i] = 0;
+        h_C_CPU[i] = 0;
     }
 
     // Initialization timing
@@ -90,21 +92,25 @@ int main() {
     //FIXME:Add all other allocations and copies from host to device
     cudaMalloc(&d_B, DSIZE*DSIZE*sizeof(float));
     cudaMalloc(&d_C, DSIZE*DSIZE*sizeof(float));
+    cudaCheckErrors("After Memory Allocation");
 
     // Copy from host to device
     cudaMemcpy(d_A, h_A, DSIZE*DSIZE*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(d_B, h_B, DSIZE*DSIZE*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_C, h_C, DSIZE*DSIZE*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_C, h_C_GPU, DSIZE*DSIZE*sizeof(float), cudaMemcpyHostToDevice);
+    cudaCheckErrors("After copying from host to device");
 
     // Launch kernel
     // Specify the block and grid dimentions 
-    const int block_size = 8;
+    const int block_size = 1;
     dim3 block(1,1);  //FIXME
     dim3 grid(DSIZE/block_size,DSIZE/block_size); //FIXME
     matrix_mul_gpu<<<grid, block>>>(d_A, d_B, d_C, DSIZE);
+    cudaCheckErrors("After launching kernel");
 
     // Copy results back to host
-    cudaMemcpy(h_C, d_C, DSIZE*DSIZE*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_C_GPU, d_C, DSIZE*DSIZE*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaCheckErrors("After copying from device back to host");
     // Print and check some elements to make the addition was succesfull
     printf("GPU \n");
     printf("Matrix A: ");
@@ -121,7 +127,7 @@ int main() {
 
     printf("Matrix A * Matrix B: ");
     for (int i = 0; i < DSIZE*DSIZE; i++) {
-        printf("%f ", h_C[i]);
+        printf("%f ", h_C_GPU[i]);
     }
     printf("\n");
 
@@ -132,7 +138,7 @@ int main() {
 
     // FIXME
     // Excecute and time the cpu matrix multiplication function
-    matrix_mul_cpu(h_A,h_B,h_C,DSIZE);
+    matrix_mul_cpu(h_A,h_B,h_C_CPU,DSIZE);
     // Print and check some elements to make the addition was succesfull
     printf("CPU \n");
     printf("Matrix A: ");
@@ -149,7 +155,7 @@ int main() {
 
     printf("Matrix A * Matrix B: ");
     for (int i = 0; i < DSIZE*DSIZE; i++) {
-        printf("%f ", h_C[i]);
+        printf("%f ", h_C_CPU[i]);
     }
     printf("\n");
 
@@ -162,7 +168,8 @@ int main() {
     // Free memory 
     free(h_A);
     free(h_B);
-    free(h_C);
+    free(h_C_GPU);
+    free(h_C_CPU);
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_C);
