@@ -1,3 +1,27 @@
+## Remember
+
+After connecting to a Wisconsin computing node: 
+
+**To set-up your environment:**
+```
+ssh g38nXX # XX:01-16
+export LD_LIBRARY_PATH=/usr/local/cuda/lib
+export PATH=$PATH:/usr/local/cuda/bin
+```
+
+**To compile:**
+
+```
+nvcc my_script.cu -o my_script
+```
+
+**To run:**
+
+```
+./my_script
+```
+
+
 # Assignments : Introduction to CUDA
 
 - **Exercise 1** 
@@ -27,25 +51,5 @@
   - Using the timer to check how long did it take to excecute the matrix multiplication on the CPU
   - Using the timer to check how long did it take to excecute the matrix multiplication on the GPU
 
-## Remember
 
-After connecting to a Wisconsin computing node: 
 
-**To set-up your environment:**
-```
-ssh g38nXX # XX:01-16
-export LD_LIBRARY_PATH=/usr/local/cuda/lib
-export PATH=$PATH:/usr/local/cuda/bin
-```
-
-**To compile:**
-
-```
-nvcc my_script.cu -o my_script
-```
-
-**To run:**
-
-```
-./my_script
-```
